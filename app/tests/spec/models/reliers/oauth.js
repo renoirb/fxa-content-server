@@ -13,11 +13,12 @@ define([
   'lib/oauth-errors',
   'lib/promise',
   'lib/relier-keys',
+  'lib/resume-token',
   'lib/url',
   '../../../mocks/window',
   '../../../lib/helpers'
 ], function (chai, sinon, OAuthRelier, Session, OAuthClient, OAuthErrors,
-      p, RelierKeys, Url, WindowMock, TestHelpers) {
+      p, RelierKeys, ResumeToken, Url, WindowMock, TestHelpers) {
   var assert = chai.assert;
 
   describe('models/reliers/oauth', function () {
@@ -238,6 +239,31 @@ define([
       it('returns an opaque token to be passed along with email verification links', function () {
         relier.set('state', 'STATE');
         assert.equal(typeof relier.getResumeToken(), 'string');
+      });
+    });
+
+    describe('_parseResumeToken', function () {
+      it('parses the resume param into an object', function () {
+        var resumeData = {
+          state: 'state',
+          verificationRedirect: true,
+          random: 'yes'
+        };
+        var resumeToken = ResumeToken.stringify(resumeData);
+
+        windowMock.location.search = TestHelpers.toSearchString({
+          //jshint camelcase: false
+          client_id: CLIENT_ID,
+          scope: SCOPE,
+          resume: resumeToken
+        });
+
+        return relier.fetch()
+          .then(function () {
+            assert.equal(relier.get('state'), 'state');
+            assert.equal(relier.get('verificationRedirect'), true);
+            assert.isUndefined(relier.get('random'), 'only allow specific resume token values');
+          });
       });
     });
 

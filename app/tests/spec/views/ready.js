@@ -136,6 +136,25 @@ function (chai, sinon, View, Session, FxaClient, p, Able, FxDesktopRelier,
             assert.ok(view.$('.os-general').length);
           });
       });
+
+      it('formats the service name correctly depending on the always redirect param', function () {
+        var serviceName = 'Find My Device';
+        var redirectUri = 'https://find.firefox.com';
+        relier.set('redirectUri', redirectUri);
+        relier.set('serviceName', serviceName);
+        assert.isFalse(view.context().showProceedButton);
+        assert.equal(view.context().redirectUri, redirectUri);
+
+        relier.set('verificationRedirect', 'always');
+        assert.isTrue(view.context().showProceedButton);
+
+        relier.set('redirectUri', 'urn:ietf:wg:oauth:2.0:fx:webchannel');
+        assert.isFalse(view.context().showProceedButton);
+
+        relier.set('redirectUri', null);
+        assert.isFalse(view.context().showProceedButton);
+      });
+
     });
   });
 });

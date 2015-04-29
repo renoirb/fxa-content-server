@@ -11,8 +11,9 @@ define([
   'app/bower_components/fxa-js-client/fxa-client',
   'tests/lib/restmail',
   'tests/lib/helpers',
+  'tests/functional/lib/test',
   'tests/functional/lib/helpers'
-], function (intern, registerSuite, assert, require, nodeXMLHttpRequest, FxaClient, restmail, TestHelpers, FunctionalHelpers) {
+], function (intern, registerSuite, assert, require, nodeXMLHttpRequest, FxaClient, restmail, TestHelpers, Test, FunctionalHelpers) {
   'use strict';
 
   var config = intern.config;
@@ -46,7 +47,6 @@ define([
         '123done': true
       });
     },
-
     'with missing client_id': function () {
       return this.get('remote').get(require.toUrl(SIGNUP_ROOT + '?scope=profile'))
         .findByCssSelector('#fxa-400-header')
@@ -225,7 +225,10 @@ define([
           // but cannot redirect
           assert.isTrue(/123done/i.test(text));
         })
-        .end();
+        .end()
+
+        // make sure the relier name is not a link
+        .then(Test.noElementById(self, 'redirectTo'));
     },
 
     'sign up, bounce email, allow user to restart flow but force a different email': function () {
@@ -294,7 +297,186 @@ define([
 
         .findByCssSelector('#loggedin')
         .end();
-    }
+    },
+
+    'signup, same browser same window, verification_redirect=always': function () {
+      var self = this;
+
+      return FunctionalHelpers.openFxaFromRp(self, 'signup')
+        // upgrade the content server oauth to include 'verification_redirect'
+        .getCurrentUrl()
+        .then(function (url) {
+          return self.get('remote').get(require.toUrl(url + '&verification_redirect=always'));
+        })
+        .then(function () {
+          return FunctionalHelpers.fillOutSignUp(self, email, PASSWORD, OLD_ENOUGH_YEAR);
+        })
+
+        .findByCssSelector('#fxa-confirm-header')
+        .end()
+
+        .then(function () {
+          return FunctionalHelpers.getVerificationLink(email, 0);
+        })
+        .then(function (verificationLink) {
+          return self.get('remote').get(require.toUrl(verificationLink));
+        })
+
+        // should redirect back to 123done
+        .findByCssSelector('#loggedin')
+        .end();
+    },
+
+    'signup, same browser different window, verification_redirect=always': function () {
+      var self = this;
+      self.timeout = 90 * 1000;
+
+      return FunctionalHelpers.openFxaFromRp(self, 'signup')
+        // upgrade the content server oauth to include 'verification_redirect'
+        .getCurrentUrl()
+        .then(function (url) {
+          return self.get('remote').get(require.toUrl(url + '&verification_redirect=always'));
+        })
+        .then(function () {
+          return FunctionalHelpers.fillOutSignUp(self, email, PASSWORD, OLD_ENOUGH_YEAR);
+        })
+
+        .findByCssSelector('#fxa-confirm-header')
+        .end()
+
+        .then(function () {
+          return FunctionalHelpers.openVerificationLinkSameBrowser(
+            self, email, 0);
+        })
+
+        .switchToWindow('newwindow')
+        // this is an verification_redirect flow, both windows should login
+        .findByCssSelector('#loggedin')
+        .end()
+
+        .closeCurrentWindow()
+        .switchToWindow('')
+
+        .findByCssSelector('#loggedin')
+        .end();
+    },
+
+    'signup, verify different browser, verification_redirect=always': function () {
+      var self = this;
+
+      return FunctionalHelpers.openFxaFromRp(self, 'signup')
+        // upgrade the content server oauth to include 'verification_redirect'
+        .getCurrentUrl()
+        .then(function (url) {
+          return self.get('remote').get(require.toUrl(url + '&verification_redirect=always'));
+        })
+        .then(function () {
+          return FunctionalHelpers.fillOutSignUp(self, email, PASSWORD, OLD_ENOUGH_YEAR);
+        })
+
+        .findByCssSelector('#fxa-confirm-header')
+        .end()
+
+        .then(function () {
+          // clear browser state to simulate opening link in a new browser
+          return FunctionalHelpers.clearBrowserState(self, {
+            contentServer: true,
+            '123done': true
+          });
+        })
+
+        .then(function () {
+          return FunctionalHelpers.getVerificationLink(email, 0);
+        })
+        .then(function (verificationLink) {
+          return self.get('remote').get(require.toUrl(verificationLink));
+        })
+
+        // new browser provides a proceed link to the relier
+        .findByCssSelector('#proceedButton')
+        .click()
+        .end()
+
+        // Note: success is 123done giving a bad request because this is a different browser
+        .findByCssSelector('body')
+        .getVisibleText()
+        .then(function (text) {
+          assert.equal(text, 'Bad request - missing code - missing state');
+        })
+        .end();
+    },
+
+    'signup, same browser different window, verification_redirect=samebrowser': function () {
+      var self = this;
+      self.timeout = 90 * 1000;
+
+      return FunctionalHelpers.openFxaFromRp(self, 'signup')
+        // upgrade the content server oauth to include 'verification_redirect'
+        .getCurrentUrl()
+        .then(function (url) {
+          return self.get('remote').get(require.toUrl(url + '&verification_redirect=samebrowser'));
+        })
+        .then(function () {
+          return FunctionalHelpers.fillOutSignUp(self, email, PASSWORD, OLD_ENOUGH_YEAR);
+        })
+
+        .findByCssSelector('#fxa-confirm-header')
+        .end()
+
+        .then(function () {
+          return FunctionalHelpers.openVerificationLinkSameBrowser(
+            self, email, 0);
+        })
+
+        .switchToWindow('newwindow')
+        // this is an verification_redirect flow, both windows should login
+        .findByCssSelector('#loggedin')
+        .end()
+
+        .closeCurrentWindow()
+        .switchToWindow('')
+
+        .findByCssSelector('#loggedin')
+        .end();
+    },
+
+    'signup, verify different browser, verification_redirect=samebrowser': function () {
+      var self = this;
+
+      return FunctionalHelpers.openFxaFromRp(self, 'signup')
+        // upgrade the content server oauth to include 'verification_redirect'
+        .getCurrentUrl()
+        .then(function (url) {
+          return self.get('remote').get(require.toUrl(url + '&verification_redirect=samebrowser'));
+        })
+        .then(function () {
+          return FunctionalHelpers.fillOutSignUp(self, email, PASSWORD, OLD_ENOUGH_YEAR);
+        })
+
+        .findByCssSelector('#fxa-confirm-header')
+        .end()
+
+        .then(function () {
+          // clear browser state to simulate opening link in a new browser
+          return FunctionalHelpers.clearBrowserState(self, {
+            contentServer: true,
+            '123done': true
+          });
+        })
+
+        .then(function () {
+          return FunctionalHelpers.getVerificationLink(email, 0);
+        })
+        .then(function (verificationLink) {
+          return self.get('remote').get(require.toUrl(verificationLink));
+        })
+
+        .findByCssSelector('#fxa-sign-up-complete-header')
+        .end()
+
+        .then(Test.noElementByCssSelector(this, '#proceedButton'));
+    },
+
   });
 
 });

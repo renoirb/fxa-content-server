@@ -15,15 +15,17 @@ define([
   'stache!templates/ready',
   'lib/session',
   'lib/xss',
+  'lib/url',
   'lib/strings',
   'lib/auth-errors',
   'lib/promise',
+  'lib/constants',
   'views/mixins/service-mixin',
   'views/marketing_snippet',
   'views/marketing_snippet_ios'
 ],
-function (Cocktail, BaseView, Template, Session, Xss, Strings,
-      AuthErrors, p, ServiceMixin, MarketingSnippet, MarketingSnippetiOS) {
+function (Cocktail, BaseView, Template, Session, Xss, Url, Strings,
+      AuthErrors, p, Constants, ServiceMixin, MarketingSnippet, MarketingSnippetiOS) {
 
   var View = BaseView.extend({
     template: Template,
@@ -40,10 +42,21 @@ function (Cocktail, BaseView, Template, Session, Xss, Strings,
 
     context: function () {
       var serviceName = this.relier.get('serviceName');
+      var redirectUri = this.relier.get('redirectUri');
+      var verificationRedirect = this.relier.get('verificationRedirect');
+      var showProceedButton = false;
+
+      // if this relier wants to use verification redirect in the same browser then create a link to the service
+      if (verificationRedirect === Constants.VERIFICATION_REDIRECT_ALWAYS &&
+          redirectUri && Url.isNavigable(redirectUri)) {
+        showProceedButton = true;
+      }
 
       return {
         service: this.relier.get('service'),
         serviceName: serviceName,
+        showProceedButton: showProceedButton,
+        redirectUri: redirectUri,
         signUp: this.is('sign_up'),
         resetPassword: this.is('reset_password'),
         accountUnlock: this.is('account_unlock')

@@ -89,6 +89,18 @@ function (_) {
       return origin;
     },
 
+    /**
+     * Returns true if given "uri" has HTTP or HTTPS scheme so it is navigable
+     *
+     * @param {String} uri
+     * @returns {boolean}
+     */
+    isNavigable: function (uri) {
+      var VALID_NUMBER_OF_CHARS = 8;
+
+      return /^(http|https):\/\//.test(uri) && uri.length > VALID_NUMBER_OF_CHARS;
+    },
+
     removeParamFromSearchString: function (name, str) {
       var params = this.searchParams(str);
       delete params[name];

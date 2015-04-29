@@ -93,7 +93,6 @@ define([
 
     finishOAuthFlow: function (account, additionalResultData) {
       var self = this;
-      self.session.clear('oauth');
       return self.getOAuthResult(account)
         .then(function (result) {
           if (additionalResultData) {
