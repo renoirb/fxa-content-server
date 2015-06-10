@@ -9,7 +9,7 @@
 define([
   'underscore',
   'models/reliers/relier',
-  'lib/resume-token',
+  'models/resume-token',
   'lib/oauth-errors',
   'lib/relier-keys',
   'lib/url',
@@ -97,19 +97,12 @@ define([
     },
 
     getResumeToken: function () {
-      var resumeObj = {};
+      var resumeToken = new ResumeToken();
+      // I am keeping this line separate from the above line to make
+      // it easier to inject a resume token on initialization
+      resumeToken.set(this.pick(RELIER_FIELDS_IN_RESUME_TOKEN));
 
-      _.each(RELIER_FIELDS_IN_RESUME_TOKEN, function (itemName) {
-        if (this.has(itemName)) {
-          resumeObj[itemName] = this.get(itemName);
-        }
-      }, this);
-
-      return ResumeToken.stringify(resumeObj);
-    },
-
-    _isVerificationFlow: function () {
-      return !! this.getSearchParam('code');
+      return resumeToken;
     },
 
     /**
@@ -117,16 +110,13 @@ define([
      * @private
      */
     _parseResumeToken: function () {
-      var resumeToken = this.getSearchParam('resume');
-      var parsedResumeToken = ResumeToken.parse(resumeToken);
+      var resumeToken = new ResumeToken(this.getSearchParam('resume'));
 
-      if (parsedResumeToken) {
-        _.each(RELIER_FIELDS_IN_RESUME_TOKEN, function (itemName) {
-          if (Object.prototype.hasOwnProperty.call(parsedResumeToken, itemName)) {
-            this.set(itemName, parsedResumeToken[itemName]);
-          }
-        }, this);
-      }
+      this.set(resumeToken.pick(RELIER_FIELDS_IN_RESUME_TOKEN));
+    },
+
+    _isVerificationFlow: function () {
+      return !! this.getSearchParam('code');
     },
 
     _setupVerificationFlow: function () {

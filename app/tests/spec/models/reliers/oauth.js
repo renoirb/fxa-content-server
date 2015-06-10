@@ -12,7 +12,7 @@ define([
   'lib/oauth-errors',
   'lib/promise',
   'lib/relier-keys',
-  'lib/resume-token',
+  'models/resume-token',
   'lib/url',
   '../../../mocks/window',
   '../../../lib/helpers'
@@ -333,7 +333,7 @@ define([
     describe('getResumeToken', function () {
       it('returns an opaque token to be passed along with email verification links', function () {
         relier.set('state', 'STATE');
-        assert.equal(typeof relier.getResumeToken(), 'string');
+        assert.equal(relier.getResumeToken().get('state'), 'STATE');
       });
     });
 

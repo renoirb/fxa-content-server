@@ -12,7 +12,7 @@ define([
   'lib/fxa-client',
   'lib/auth-errors',
   'lib/constants',
-  'lib/resume-token',
+  'models/resume-token',
   'models/reliers/oauth'
 ],
 // FxaClientWrapper is the object that is used in
