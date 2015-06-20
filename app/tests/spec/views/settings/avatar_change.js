@@ -129,7 +129,7 @@ function (chai, $, sinon, View, RouterMock, FileReaderMock, ProfileMock,
         return view.afterVisible()
           .then(function () {
             assert.equal(view.$('.avatar-wrapper img').length, 1);
-            return view.remove();
+            return view.removeAvatar();
           })
           .then(function () {
             assert.isTrue(view.deleteDisplayedAccountProfileImage.called);
@@ -145,7 +145,7 @@ function (chai, $, sinon, View, RouterMock, FileReaderMock, ProfileMock,
         return view.afterVisible()
           .then(function () {
             assert.equal(view.$('.avatar-wrapper img').length, 1);
-            return view.remove();
+            return view.removeAvatar();
           })
           .then(function () {
             assert.fail('unexpected success');

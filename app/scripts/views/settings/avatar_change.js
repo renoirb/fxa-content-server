@@ -26,7 +26,7 @@ function ($, Cocktail, FormView, AvatarMixin, SettingsMixin, SettingsPanelMixin,
 
     events: {
       'click #file': 'filePicker',
-      'click .remove': 'remove',
+      'click .remove': 'removeAvatar',
       'change #imageLoader': 'fileSet'
     },
 
@@ -60,7 +60,7 @@ function ($, Cocktail, FormView, AvatarMixin, SettingsMixin, SettingsPanelMixin,
       this.$(':file').wrap(wrapper);
     },
 
-    remove: function () {
+    removeAvatar: function () {
       var self = this;
       var account = self.getSignedInAccount();
       return self.deleteDisplayedAccountProfileImage(account)
@@ -140,18 +140,6 @@ function ($, Cocktail, FormView, AvatarMixin, SettingsMixin, SettingsPanelMixin,
     // Hide Gravatar except for tests until #2515 is resolved
     _shouldShowGravatar: function (email) {
       return /^avatarAB-.+@restmail\.net$/.test(email);
-    },
-
-    submit: function () {
-      var self = this;
-      var account = self.getSignedInAccount();
-      var displayName = self.getElementValue('.name');
-
-      account.setDisplayName(displayName)
-        .then(function () {
-          account.set('displayName', displayName);
-          self.user.setAccount(account);
-        });
     }
 
   });
